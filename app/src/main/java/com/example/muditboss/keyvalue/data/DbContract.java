@@ -18,5 +18,8 @@ public class DbContract {
         //Column for value
         public static final String COLUMN_VALUE = "value";
 
+        //Column for specifying data type
+        public static final String COLUMN_TYPE = "type";
+
     }
 }

@@ -24,14 +24,20 @@ public class DbHelper extends SQLiteOpenHelper{
     @Override
     public void onCreate(SQLiteDatabase db){
 
-        final String CREATE_TABLE = "CREATE TABLE"+ DbContract.KeyValue.TABLE_NAME + "("
-                + DbContract.KeyValue.COLUMN_KEY + "TEXT PRIMARY KEY," +
-                DbContract.KeyValue.COLUMN_VALUE + "TEXT" + ")";
+        String sql = "";
 
-        SQLiteStatement stmt = db.compileStatement(CREATE_TABLE);
+        sql += "CREATE TABLE " + DbContract.KeyValue.TABLE_NAME;
+        sql += " ( ";
+        sql += DbContract.KeyValue.COLUMN_KEY + " TEXT PRIMARY KEY, ";
+        sql += DbContract.KeyValue.COLUMN_VALUE + " TEXT, ";
+        sql += DbContract.KeyValue.COLUMN_TYPE + " TEXT ";
+        sql += " ) ";
+        SQLiteStatement stmt = db.compileStatement(sql);
 
         try{
-            stmt.execute();
+
+           stmt.execute();
+            Log.d("Success","Db created successfully");
         }
         catch (SQLException Sqlexception){
             Log.d("SQL_QUERY","Something wrong in query", Sqlexception);
