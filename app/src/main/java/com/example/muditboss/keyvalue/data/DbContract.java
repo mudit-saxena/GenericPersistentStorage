@@ -3,7 +3,7 @@ package com.example.muditboss.keyvalue.data;
 import android.provider.BaseColumns;
 
 /**
- *
+ * DbContract specifying the schema of DB
  */
 public class DbContract {
 
@@ -12,10 +12,10 @@ public class DbContract {
         //Table Name
         public static final String TABLE_NAME = "keyStore";
 
-        //Column for key
+        //Column for specifying key
         public static final String COLUMN_KEY = "key";
 
-        //Column for value
+        //Column for specifying value
         public static final String COLUMN_VALUE = "value";
 
         //Column for specifying data type

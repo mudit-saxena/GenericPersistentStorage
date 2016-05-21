@@ -1,8 +1,10 @@
 package com.example.muditboss.keyvalue.data;
 
+import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.test.AndroidTestCase;
+import android.test.mock.MockContext;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -13,15 +15,17 @@ import java.util.HashSet;
  */
 public class DatabaseTest extends AndroidTestCase{
 
-   // Context mContext;
-
+  //Context mContext;
+   Context context;
     void deleteTheDatabase() {
-        mContext.deleteDatabase(DbHelper.DATABASE_NAME);
+        context.deleteDatabase(DbHelper.DATABASE_NAME);
     }
 
     @Before
     public void setUp() throws Exception {
 
+        context = new MockContext();
+        setContext(context);
         deleteTheDatabase();
     }
 
@@ -31,12 +35,12 @@ public class DatabaseTest extends AndroidTestCase{
        tableNameHashSet.add(DbContract.KeyValue.TABLE_NAME);
 
 
-        mContext.deleteDatabase(DbHelper.DATABASE_NAME);
-        SQLiteDatabase db = new DbHelper(
-                this.mContext).getWritableDatabase();
+        context.deleteDatabase(DbHelper.DATABASE_NAME);
+        DbHelper dbHelper= new DbHelper(context);
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
         assertEquals(true, db.isOpen());
 
-        // have we created the tables we want?
+        // have we created the table we want?
         Cursor c = db.rawQuery("SELECT name FROM sqlite_master WHERE type='table'", null);
 
         assertTrue("Error: This means that the database has not been created correctly",
@@ -47,8 +51,7 @@ public class DatabaseTest extends AndroidTestCase{
             tableNameHashSet.remove(c.getString(0));
         } while( c.moveToNext() );
 
-        // if this fails, it means that your database doesn't contain both the location entry
-        // and weather entry tables
+        // if this fails, it means that your database doesn't contain keyValue table
         assertTrue("Error: Your database was created without table",
                 tableNameHashSet.isEmpty());
     }

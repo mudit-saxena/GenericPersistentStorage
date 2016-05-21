@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteStatement;
 import android.util.Log;
 
 /**
- *
+ * DbHelper creates the db
  */
 public class DbHelper extends SQLiteOpenHelper{
 

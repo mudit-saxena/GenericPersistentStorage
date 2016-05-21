@@ -13,13 +13,24 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- *
+ * Key Value Persistent Storage Layer
+ * It supports basic data types int, float, long and String
+ * Read/Write to Key Value pair requires shared/exclusive locks
+ * Update of Values takes place through transaction to ensure consistency of db
+ * getString and putString methods contains log statement for queue length of threads acquired or waiting for locks respectively
  */
+
+/*Testing of all methods is done through MainActivity.java
+* CustomSharedPreferenceTest.java
+* DatabaseTest.java
+* */
+
 public class CustomSharedPreference {
 
     Context mContext;
 
 
+    // Tags for logs
     public static final String TAG_SUCCESS ="SUCCESS";
     public static final String TAG_EMPTY_CURSOR="EMPTY CURSOR";
 
@@ -48,6 +59,7 @@ public class CustomSharedPreference {
 
     }
 
+
     private String getReadQuery(String key,String dataType){
 
        String SQL_READ = "SELECT * FROM"+" "+DbContract.KeyValue.TABLE_NAME
@@ -57,6 +69,7 @@ public class CustomSharedPreference {
 
         return SQL_READ;
     }
+
 
     private String getInsertQuery(String key, String value, String dataType){
 
@@ -71,10 +84,9 @@ public class CustomSharedPreference {
 
     }
 
-
-    // getInt():- Return the int value stored
-    // Return's -1 if the value doesn't exist
-
+    /* getInt():- Return the int value stored
+       return's -1 if the value doesn't exist
+    */
       public int getInt(String key){
 
             r.lock();
@@ -86,19 +98,21 @@ public class CustomSharedPreference {
 
                   Cursor c = db.rawQuery(query,null);
 
-                  String ans="";
+                  String ans;
 
                   if(c!=null&c.moveToFirst()) {
                       ans = c.getString(COLUMN_INDEX_VALUE);
+                      c.close();
+                      db.close();
                       return Integer.parseInt(ans);
                   }
                   else{
                       Log.d(TAG_EMPTY_CURSOR,"Cursr is null :- getInt()");
                   }
-
                   db.close();
+
               }
-              catch (Exception e){
+              catch (SQLException e){
                   Log.d("GET_INT","ERROR GENERATED FROM getInt()",e);
               }
         finally {
@@ -112,10 +126,14 @@ public class CustomSharedPreference {
     /*
     putInt used to insert the value associated with key
     if it doesn't exist else it updates the existing value
+    return true if value successfully inserted/updated
+     false otherwise
     */
-    public void putInt(String key , int intVal){
+    public boolean putInt(String key , int intVal){
 
-        String value = new Integer(intVal).toString();
+        boolean result = true;
+
+        String value = Integer.toString(intVal);
         w.lock();
 
         try {
@@ -138,31 +156,39 @@ public class CustomSharedPreference {
                 db.update(DbContract.KeyValue.TABLE_NAME,values,"key = "+ "'"+ key +"'",null);
             }else{
 
-                String insertQuery = getInsertQuery(key,value,INT_TYPE);
+                 String insertQuery = getInsertQuery(key,value,INT_TYPE);
 
-                SQLiteStatement stmtInsert = db.compileStatement(insertQuery);
+                 SQLiteStatement stmtInsert = db.compileStatement(insertQuery);
 
-                long id = stmtInsert.executeInsert();
+                 long id = stmtInsert.executeInsert();
 
-                if(id!=-1)
+                 if(id!=-1)
                     Log.d(TAG_SUCCESS,"Insert is successfull:putInt()");
-                else
+                 else{
+                    result = false;
                     Log.d("FAILURE","Insert failed : putInt()");
+                }
+
             }
 
             db.setTransactionSuccessful();
             db.endTransaction();
             db.close();
+        }catch (SQLException e){
+            result=false;
+            Log.e("SQL_INSERT","SQLError"+e);
         }
         finally {
             w.unlock();
         }
 
+        return result;
     }
 
 
-    // getLong():- Return the long value stored
-    // Return's -1L if the value doesn't exist
+    /* getLong():- Return the long value stored
+       return's -1L if the value doesn't exist
+    */
     public long getLong(String key){
         r.lock();
         try{
@@ -173,11 +199,12 @@ public class CustomSharedPreference {
 
             Cursor c = db.rawQuery(query,null);
 
-            String ans="";
+            String ans;
 
             if(c!=null&c.moveToFirst()) {
              ans = c.getString(COLUMN_INDEX_VALUE);
                 c.close();
+                db.close();
                 return Long.parseLong(ans);
             }else{
                 Log.d(TAG_EMPTY_CURSOR,"Cursr is null :- getLong()");
@@ -189,6 +216,7 @@ public class CustomSharedPreference {
             Log.d("GET_STRING","ERROR GENERATED FROM getLong()",e);
         }
         finally {
+
             r.unlock();
         }
 
@@ -199,10 +227,14 @@ public class CustomSharedPreference {
     /*
     putLong used to insert the value associated with key
     if it doesn't exist else it updates the existing value
+    @return true if successful false otherwise
     */
-    public void putLong(String key,Long longVal){
+    public boolean putLong(String key,Long longVal){
+
+        boolean result= true;
 
         String value = Long.toString(longVal);
+
         w.lock();
 
         try {
@@ -233,23 +265,31 @@ public class CustomSharedPreference {
 
                 if(id!=-1)
                     Log.d(TAG_SUCCESS,"Insert is successfull:putLong()");
-                else
+                else{
+                    result = false;
                     Log.d("FAILURE","Insert failed : putLong()");
+                }
+
             }
 
             db.setTransactionSuccessful();
             db.endTransaction();
             db.close();
 
+        }catch (SQLException e){
+            result = false;
+            Log.e("SQL_INSERT","SQLError"+e);
         }
         finally {
             w.unlock();
         }
+
+        return result;
     }
 
-    // getFloat():- Return the long value stored
-    // Return's 0.0f if the value doesn't exist
-
+    /* getFloat():- Return the long value stored
+     * return's 0.0f if the value doesn't exist
+    */
     public Float getFloat(String key){
 
         r.lock();
@@ -262,7 +302,7 @@ public class CustomSharedPreference {
 
             Cursor c = db.rawQuery(query,null);
 
-            String ans ="";
+            String ans;
 
             if(c.getCount()!=0&c.moveToFirst()) {
 
@@ -273,7 +313,7 @@ public class CustomSharedPreference {
             }else{
                 Log.d(TAG_EMPTY_CURSOR,"Cursor is null :- getFloat()");
             }
-
+            db.close();
         }
         catch (SQLException e){
             Log.d("GET_STRING","ERROR GENERATED FROM getString()",e);
@@ -287,12 +327,15 @@ public class CustomSharedPreference {
     }
 
 
-    /*
-    putFloat used to insert the value associated with key
-    if it doesn't exist else it updates the existing value
+    /* putFloat used to insert the value associated with key
+     * if it doesn't exist else it updates the existing value
+     * @return true if successful false otherwise
     */
 
-    public void putFloat(String key, Float floatVal){
+    public boolean putFloat(String key, Float floatVal){
+
+        boolean result = true;
+
         String value = Float.toString(floatVal);
         w.lock();
 
@@ -325,24 +368,38 @@ public class CustomSharedPreference {
 
                 if(id!=-1)
                     Log.d(TAG_SUCCESS,"Insert is successfull:putFloat()");
-                else
+                else{
+                    result = false;
                     Log.d("FAILURE","Insert failed : putFloat()");
+                }
+
             }
+
 
             db.setTransactionSuccessful();
             db.endTransaction();
             db.close();
+
+        }catch (SQLException e){
+            result =false;
+           Log.e("SQL_INSERT","SQLError"+e);
         }
         finally {
             w.unlock();
         }
+
+        return result;
     }
 
 
-    /* getString used to retrieve the value associated with the key*/
+    /* getString used to retrieve the value associated with the key
+    * @return value else null
+    */
     @Nullable
     public String getString(String key){
 
+        // Check for number of read locks held simultaneously
+        Log.d("Waiting on string read","Read"+rwl.getReadLockCount());
 
         r.lock();
          try{
@@ -358,13 +415,14 @@ public class CustomSharedPreference {
                 if(c!=null&c.moveToFirst()){
                     ans = c.getString(COLUMN_INDEX_VALUE);
 
+                    c.close();
                     db.close();
 
                     return ans;
                 }else{
                     Log.d(TAG_EMPTY_CURSOR,"Cursor is null :- getString()");
                 }
-
+             db.close();
          }
          catch (Exception e){
              Log.d("GET_STRING","ERROR GENERATED FROM getString()",e);
@@ -380,9 +438,15 @@ public class CustomSharedPreference {
     /*
     putString used to insert the value associated with key
     if it doesn't exist else it updates the existing value
+    @return true if successful false otherwise
     */
 
-    public void putString(String key, String value){
+    public boolean putString(String key, String value){
+
+
+        boolean result = true;
+        //Check for no. of threads waiting in Queue to acquire write lock
+        Log.d("Thread Write","Queue Length"+rwl.getQueueLength());
 
         w.lock();
 
@@ -412,16 +476,24 @@ public class CustomSharedPreference {
 
                 if(id!=-1)
                     Log.d(TAG_SUCCESS,"Insert is successfull:putString()");
-                else
+                else{
+                    result = false;
                     Log.d("FAILURE","Insert failed : putString()");
+                }
+
             }
 
             db.setTransactionSuccessful();
             db.endTransaction();
             db.close();
+        }catch (SQLException e){
+            result = false;
+            Log.e("SQL_INSERT","SQLError"+e);
         }
         finally {
             w.unlock();
         }
+
+        return result;
     }
 }
