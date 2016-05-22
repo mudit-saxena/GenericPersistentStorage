@@ -14,27 +14,23 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Key Value Persistent Storage Layer
- * It supports basic data types int, float, long and String
+ * It supports basic data types int, float, long and String <br/>
  * Read/Write to Key Value pair requires shared/exclusive locks
  * Update of Values takes place through transaction to ensure consistency of db
- * getString and putString methods contains log statement for queue length of threads acquired or waiting for locks respectively
- */
-
-/*Testing of all methods is done through MainActivity.java
-* CustomSharedPreferenceTest.java
-* DatabaseTest.java
-* */
+ * Testing of all methods is done through classes under androidTest
+ * CustomSharedPreferenceTest.java
+ * DatabaseTest.java
+ * */
 
 public class CustomSharedPreference {
 
     Context mContext;
 
-
     // Tags for logs
     public static final String TAG_SUCCESS ="SUCCESS";
-    public static final String TAG_EMPTY_CURSOR="EMPTY CURSOR";
+    public static final String TAG_EMPTY_CURSOR="EMPTY_CURSOR";
 
-    // Specificies the column index for "Value" field in table
+    // Specificies the column index for "value" field in table
     public static final int COLUMN_INDEX_VALUE= 1;
 
     //Specifying the data type
@@ -42,8 +38,6 @@ public class CustomSharedPreference {
     public static final String INT_TYPE = "int";
     public static final String LONG_TYPE = "long";
     public static final String FLOAT_TYPE = "float";
-
-
 
 
     // ReadWrite Lock instance
@@ -56,7 +50,6 @@ public class CustomSharedPreference {
 
     public CustomSharedPreference(Context mContext){
         this.mContext = mContext;
-
     }
 
 
@@ -84,9 +77,9 @@ public class CustomSharedPreference {
 
     }
 
-    /* getInt():- Return the int value stored
-       return's -1 if the value doesn't exist
-    */
+    /** getInt():- Return the int value stored
+     *  @return -1 if the value doesn't exist
+    **/
       public int getInt(String key){
 
             r.lock();
@@ -94,7 +87,7 @@ public class CustomSharedPreference {
 
                   SQLiteDatabase db = new DbHelper(mContext).getReadableDatabase();
 
-                    String query = getReadQuery(key,INT_TYPE);
+                  String query = getReadQuery(key,INT_TYPE);
 
                   Cursor c = db.rawQuery(query,null);
 
@@ -113,7 +106,7 @@ public class CustomSharedPreference {
 
               }
               catch (SQLException e){
-                  Log.d("GET_INT","ERROR GENERATED FROM getInt()",e);
+                  Log.d("SQL Query","ERROR GENERATED FROM getInt()",e);
               }
         finally {
                   r.unlock();
@@ -123,12 +116,12 @@ public class CustomSharedPreference {
     }
 
 
-    /*
-    putInt used to insert the value associated with key
-    if it doesn't exist else it updates the existing value
-    return true if value successfully inserted/updated
-     false otherwise
-    */
+    /**
+     * putInt used to insert the value associated with key
+     * if it doesn't exist else it updates the existing value
+     * @return true if value successfully inserted/updated
+     * false otherwise
+    **/
     public boolean putInt(String key , int intVal){
 
         boolean result = true;
@@ -186,9 +179,9 @@ public class CustomSharedPreference {
     }
 
 
-    /* getLong():- Return the long value stored
-       return's -1L if the value doesn't exist
-    */
+    /** getLong():- Return the long value stored
+     *  @return -1L if the value doesn't exist
+    **/
     public long getLong(String key){
         r.lock();
         try{
@@ -224,11 +217,11 @@ public class CustomSharedPreference {
     }
 
 
-    /*
-    putLong used to insert the value associated with key
-    if it doesn't exist else it updates the existing value
-    @return true if successful false otherwise
-    */
+    /**
+     * putLong used to insert the value associated with key
+     * if it doesn't exist else it updates the existing value
+     * @return true if successful false otherwise
+    **/
     public boolean putLong(String key,Long longVal){
 
         boolean result= true;
@@ -245,6 +238,7 @@ public class CustomSharedPreference {
             db.beginTransaction();
 
             String query = getReadQuery(key,LONG_TYPE);
+
             Cursor c = db.rawQuery(query,null);
 
             if(c.getCount()!=0&&c.moveToFirst()){
@@ -287,9 +281,9 @@ public class CustomSharedPreference {
         return result;
     }
 
-    /* getFloat():- Return the long value stored
-     * return's 0.0f if the value doesn't exist
-    */
+    /** getFloat():- Return the long value stored
+     *  @return 0.0f if the value doesn't exist
+    **/
     public Float getFloat(String key){
 
         r.lock();
@@ -327,10 +321,10 @@ public class CustomSharedPreference {
     }
 
 
-    /* putFloat used to insert the value associated with key
+    /** putFloat used to insert the value associated with key
      * if it doesn't exist else it updates the existing value
      * @return true if successful false otherwise
-    */
+    **/
 
     public boolean putFloat(String key, Float floatVal){
 
@@ -391,15 +385,11 @@ public class CustomSharedPreference {
         return result;
     }
 
-
-    /* getString used to retrieve the value associated with the key
-    * @return value else null
-    */
+    /**getString used to retrieve the value associated with the key
+    * @return value if exist else null
+    **/
     @Nullable
     public String getString(String key){
-
-        // Check for number of read locks held simultaneously
-        Log.d("Waiting on string read","Read"+rwl.getReadLockCount());
 
         r.lock();
          try{
@@ -425,7 +415,7 @@ public class CustomSharedPreference {
              db.close();
          }
          catch (Exception e){
-             Log.d("GET_STRING","ERROR GENERATED FROM getString()",e);
+             Log.d("SQL QUERY","ERROR GENERATED FROM getString()",e);
          }
          finally {
              r.unlock();
@@ -435,18 +425,15 @@ public class CustomSharedPreference {
     }
 
 
-    /*
-    putString used to insert the value associated with key
-    if it doesn't exist else it updates the existing value
-    @return true if successful false otherwise
-    */
+    /**putString used to insert the value associated with key
+     * if it doesn't exist else it updates the existing value
+     * @return true if successful false otherwise
+    **/
 
     public boolean putString(String key, String value){
 
 
         boolean result = true;
-        //Check for no. of threads waiting in Queue to acquire write lock
-        Log.d("Thread Write","Queue Length"+rwl.getQueueLength());
 
         w.lock();
 

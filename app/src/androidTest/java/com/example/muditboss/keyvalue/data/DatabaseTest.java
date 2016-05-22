@@ -1,42 +1,40 @@
 package com.example.muditboss.keyvalue.data;
 
-import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.test.AndroidTestCase;
-import android.test.mock.MockContext;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.HashSet;
+
 /**
- *
+ * Test for creation of database
+ * then check whether the table was created successfully
  */
+
 public class DatabaseTest extends AndroidTestCase{
 
-  //Context mContext;
-   Context context;
+   //Delete any existing db if it exists
     void deleteTheDatabase() {
-        context.deleteDatabase(DbHelper.DATABASE_NAME);
+        mContext.deleteDatabase(DbHelper.DATABASE_NAME);
     }
 
     @Before
     public void setUp() throws Exception {
 
-        context = new MockContext();
-        setContext(context);
         deleteTheDatabase();
     }
 
     @Test
     public void testOnCreate() throws Throwable {
         final HashSet<String> tableNameHashSet = new HashSet<String>();
-       tableNameHashSet.add(DbContract.KeyValue.TABLE_NAME);
+        tableNameHashSet.add(DbContract.KeyValue.TABLE_NAME);
 
 
-        context.deleteDatabase(DbHelper.DATABASE_NAME);
-        DbHelper dbHelper= new DbHelper(context);
+        mContext.deleteDatabase(DbHelper.DATABASE_NAME);
+        DbHelper dbHelper= new DbHelper(mContext);
         SQLiteDatabase db = dbHelper.getReadableDatabase();
         assertEquals(true, db.isOpen());
 
@@ -54,6 +52,7 @@ public class DatabaseTest extends AndroidTestCase{
         // if this fails, it means that your database doesn't contain keyValue table
         assertTrue("Error: Your database was created without table",
                 tableNameHashSet.isEmpty());
+        c.close();
     }
 
 

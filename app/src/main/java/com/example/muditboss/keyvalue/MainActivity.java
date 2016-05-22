@@ -62,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        //TextView for String Key VAlue pair
+        //TextView for String Key Value pair
         TextView tv = (TextView) findViewById(R.id.text);
 
         //TextView for int Key Value pair
