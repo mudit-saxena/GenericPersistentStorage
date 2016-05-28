@@ -4,7 +4,6 @@ package com.example.muditboss.keyvalue.data;
 import android.test.AndroidTestCase;
 import android.test.RenamingDelegatingContext;
 
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -33,78 +32,24 @@ public class CustomSharedPreferenceTest extends AndroidTestCase{
     }
 
     @Test
-    public void testPutInt() throws Exception {
+    public void testPut() throws Exception {
 
-        csm.putInt("intTestKey1", 4);
-        csm.putInt("intTestKey2", 5);
+        // Insert the key value pair
 
-        // Value corresponding to Key should be 4 otherwise it fails
-        assertEquals(4,csm.getInt("intTestKey1"));
+        csm.put("genericTest",98);
+        csm.put("genericFloat",0.25f);
+        csm.put("genericLong",98764646431L);
+        csm.put("genericString","stringVal");
 
-        // Update value for key "intTestKey1"
-        csm.putInt("intTestKey1",100);
+        // Check whether value inserted or not?
+        assertEquals(98,csm.get("genericTest"));
 
-        //Check whether value updated
-        assertEquals(100,csm.getInt("intTestKey1"));
+        assertEquals(0.25f,csm.get("genericFloat"));
 
-        // assertion fails because Key cannot be duplicate, Primary Key constraint satisfied
-        assertFalse("Error:Duplicate key",csm.putFloat("intTestKey1",0.25f));
+        assertEquals(98764646431L,csm.get("genericLong"));
+
+        assertEquals("stringVal",csm.get("genericString"));
+
     }
 
-    @Test
-    public void testPutLong() throws Exception {
-
-        csm.putLong("longTestKey1", 100L);
-        csm.putLong("longTestKey2", 200L);
-
-        // Value corresponding to Key should be 100L otherwise it fails
-        assertEquals(100L,csm.getLong("longTestKey1"));
-
-        // Update value for key "longTestKey1"
-        csm.putLong("longTestKey1",500L);
-
-        //Check whether value updated
-        assertEquals(500L,csm.getLong("longTestKey1"));
-
-        // assertion fails because Key cannot be duplicate, Primary Key constraint satisfied
-        assertFalse("Error:Duplicate key",csm.putFloat("longTestKey1",0.25f));
-    }
-
-    @Test
-    public void testPutFloat() throws Exception {
-
-        csm.putFloat("floatTestKey1",2.325f);
-        csm.putFloat("floatTestKey2",9.25f);
-
-        // Value corresponding to Key should be 2.325f otherwise it fails
-        assertEquals(2.325f,csm.getFloat("floatTestKey1"));
-
-        // Update value for key "floatTestKey1"
-        csm.putFloat("floatTestKey1",0.5f);
-
-        //Check whether value updated
-        assertEquals(0.5f,csm.getFloat("floatTestKey1"));
-
-        // assertion fails because Key cannot be duplicate, Primary Key constraint satisfied
-        assertFalse("Error:Duplicate key",csm.putInt("floatTestKey1",25));
-    }
-
-    @Test
-    public void testPutString() throws Exception {
-
-        csm.putString("stringTestKey1","Test1");
-        csm.putString("stringTestKey2","Test2");
-
-        // Value corresponding to Key should be Test1 otherwise it fails
-        assertEquals("Test1",csm.getString("stringTestKey1"));
-
-        // Update value for key "stringTestKey1"
-        csm.putString("stringTestKey1","Mudit");
-
-        //Check whether value updated
-        assertEquals("Mudit",csm.getString("stringTestKey1"));
-
-        // assertion fails because Key cannot be duplicate, Primary Key constraint satisfied
-        assertFalse("Error:Duplicate key",csm.putLong("stringTestKey1",2500L));
-    }
 }

@@ -6,14 +6,13 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
-import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * Key Value Persistent Storage Layer
+ * Key Value Persistent Storage Layer generic implementation
  * It supports basic data types int, float, long and String <br/>
  * Read/Write to Key Value pair requires shared/exclusive locks
  * Update of Values takes place through transaction to ensure consistency of db
@@ -22,7 +21,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * DatabaseTest.java
  * */
 
-public class CustomSharedPreference {
+public class CustomSharedPreference{
 
     Context mContext;
 
@@ -53,12 +52,10 @@ public class CustomSharedPreference {
     }
 
 
-    private String getReadQuery(String key,String dataType){
+    private String getReadQuery(String key){
 
        String SQL_READ = "SELECT * FROM"+" "+DbContract.KeyValue.TABLE_NAME
-                +" "+"WHERE key="+"'"+key+"'"
-                + " AND "
-                + DbContract.KeyValue.COLUMN_TYPE +"=" +"'"+dataType+"'" ;
+                +" "+"WHERE key=" + "'" +key+ "'" ;
 
         return SQL_READ;
     }
@@ -77,56 +74,27 @@ public class CustomSharedPreference {
 
     }
 
-    /** getInt():- Return the int value stored
-     *  @return -1 if the value doesn't exist
-    **/
-      public int getInt(String key){
+    private String showType(Object o){
 
-            r.lock();
-              try{
+        String type="";
+        String oType = o.getClass().getName();
+        if(oType.equals("java.lang.Integer"))
+         type = INT_TYPE;
+        else if(oType.equals("java.lang.Float"))
+          type = FLOAT_TYPE;
+        else if(oType.equals("java.lang.Long"))
+          type = LONG_TYPE;
+        else
+            type = STRING_TYPE;
 
-                  SQLiteDatabase db = new DbHelper(mContext).getReadableDatabase();
-
-                  String query = getReadQuery(key,INT_TYPE);
-
-                  Cursor c = db.rawQuery(query,null);
-
-                  String ans;
-
-                  if(c!=null&c.moveToFirst()) {
-                      ans = c.getString(COLUMN_INDEX_VALUE);
-                      c.close();
-                      db.close();
-                      return Integer.parseInt(ans);
-                  }
-                  else{
-                      Log.d(TAG_EMPTY_CURSOR,"Cursr is null :- getInt()");
-                  }
-                  db.close();
-
-              }
-              catch (SQLException e){
-                  Log.d("SQL Query","ERROR GENERATED FROM getInt()",e);
-              }
-        finally {
-                  r.unlock();
-              }
-
-        return -1;
+        return type;
     }
 
 
-    /**
-     * putInt used to insert the value associated with key
-     * if it doesn't exist else it updates the existing value
-     * @return true if value successfully inserted/updated
-     * false otherwise
-    **/
-    public boolean putInt(String key , int intVal){
-
+    public <T> boolean put(String key,T val){
         boolean result = true;
-
-        String value = Integer.toString(intVal);
+        String value = String.valueOf(val);
+        String dataType = showType(val);
         w.lock();
 
         try {
@@ -136,7 +104,7 @@ public class CustomSharedPreference {
             // Update Transaction starts from here
             db.beginTransaction();
 
-            String query = getReadQuery(key,INT_TYPE);
+            String query = getReadQuery(key);
             Cursor c = db.rawQuery(query,null);
 
             if(c.getCount()!=0&&c.moveToFirst()){
@@ -149,17 +117,17 @@ public class CustomSharedPreference {
                 db.update(DbContract.KeyValue.TABLE_NAME,values,"key = "+ "'"+ key +"'",null);
             }else{
 
-                 String insertQuery = getInsertQuery(key,value,INT_TYPE);
+                String insertQuery = getInsertQuery(key,value,dataType);
 
-                 SQLiteStatement stmtInsert = db.compileStatement(insertQuery);
+                SQLiteStatement stmtInsert = db.compileStatement(insertQuery);
 
-                 long id = stmtInsert.executeInsert();
+                long id = stmtInsert.executeInsert();
 
-                 if(id!=-1)
-                    Log.d(TAG_SUCCESS,"Insert is successfull:putInt()");
-                 else{
+                if(id!=-1)
+                    Log.d(TAG_SUCCESS,"Insert is successfull:put()");
+                else{
                     result = false;
-                    Log.d("FAILURE","Insert failed : putInt()");
+                    Log.d("FAILURE","Insert failed : put()");
                 }
 
             }
@@ -179,308 +147,48 @@ public class CustomSharedPreference {
     }
 
 
-    /** getLong():- Return the long value stored
-     *  @return -1L if the value doesn't exist
-    **/
-    public long getLong(String key){
+    public <T> T get(String key) {
         r.lock();
         try{
 
             SQLiteDatabase db = new DbHelper(mContext).getReadableDatabase();
 
-            String query = getReadQuery(key,LONG_TYPE);
+            String query = getReadQuery(key);
 
             Cursor c = db.rawQuery(query,null);
 
-            String ans;
+            String ans="";
 
             if(c!=null&c.moveToFirst()) {
-             ans = c.getString(COLUMN_INDEX_VALUE);
-                c.close();
-                db.close();
-                return Long.parseLong(ans);
-            }else{
-                Log.d(TAG_EMPTY_CURSOR,"Cursr is null :- getLong()");
-            }
-
-            db.close();
-        }
-        catch (Exception e){
-            Log.d("GET_STRING","ERROR GENERATED FROM getLong()",e);
-        }
-        finally {
-
-            r.unlock();
-        }
-
-        return -1L;
-    }
-
-
-    /**
-     * putLong used to insert the value associated with key
-     * if it doesn't exist else it updates the existing value
-     * @return true if successful false otherwise
-    **/
-    public boolean putLong(String key,Long longVal){
-
-        boolean result= true;
-
-        String value = Long.toString(longVal);
-
-        w.lock();
-
-        try {
-
-            SQLiteDatabase db = new DbHelper(mContext).getWritableDatabase();
-
-            // Update Transaction starts from here
-            db.beginTransaction();
-
-            String query = getReadQuery(key,LONG_TYPE);
-
-            Cursor c = db.rawQuery(query,null);
-
-            if(c.getCount()!=0&&c.moveToFirst()){
-
-                ContentValues values = new ContentValues();
-
-                values.put(DbContract.KeyValue.COLUMN_VALUE,value);
-
-                 c.close();
-                db.update(DbContract.KeyValue.TABLE_NAME,values,"key = "+ "'"+ key +"'",null);
-            }else{
-
-                String insertQuery = getInsertQuery(key,value,LONG_TYPE);
-
-                SQLiteStatement stmtInsert = db.compileStatement(insertQuery);
-
-                long id = stmtInsert.executeInsert();
-
-                if(id!=-1)
-                    Log.d(TAG_SUCCESS,"Insert is successfull:putLong()");
-                else{
-                    result = false;
-                    Log.d("FAILURE","Insert failed : putLong()");
-                }
-
-            }
-
-            db.setTransactionSuccessful();
-            db.endTransaction();
-            db.close();
-
-        }catch (SQLException e){
-            result = false;
-            Log.e("SQL_INSERT","SQLError"+e);
-        }
-        finally {
-            w.unlock();
-        }
-
-        return result;
-    }
-
-    /** getFloat():- Return the long value stored
-     *  @return 0.0f if the value doesn't exist
-    **/
-    public Float getFloat(String key){
-
-        r.lock();
-
-        try{
-
-            SQLiteDatabase db = new DbHelper(mContext).getReadableDatabase();
-
-            String query = getReadQuery(key,FLOAT_TYPE);
-
-            Cursor c = db.rawQuery(query,null);
-
-            String ans;
-
-            if(c.getCount()!=0&c.moveToFirst()) {
-
                 ans = c.getString(COLUMN_INDEX_VALUE);
+
+                String type = c.getString(2);
                 c.close();
                 db.close();
-                return Float.parseFloat(ans);
-            }else{
-                Log.d(TAG_EMPTY_CURSOR,"Cursor is null :- getFloat()");
+
+                if(type.equals(INT_TYPE))
+                    return (T) Integer.valueOf(ans);
+                else if(type.equals(FLOAT_TYPE))
+                    return (T) Float.valueOf(ans);
+                else if(type.equals(LONG_TYPE))
+                    return (T) Long.valueOf(ans);
+                else
+                    return (T) ans;
+            }
+            else{
+                Log.d(TAG_EMPTY_CURSOR,"Cursr is null :- getInt()");
             }
             db.close();
+
         }
         catch (SQLException e){
-            Log.d("GET_STRING","ERROR GENERATED FROM getString()",e);
+            Log.d("SQL Query","ERROR GENERATED FROM getInt()",e);
         }
         finally {
-
             r.unlock();
         }
-
-        return 0.0f;
-    }
-
-
-    /** putFloat used to insert the value associated with key
-     * if it doesn't exist else it updates the existing value
-     * @return true if successful false otherwise
-    **/
-
-    public boolean putFloat(String key, Float floatVal){
-
-        boolean result = true;
-
-        String value = Float.toString(floatVal);
-        w.lock();
-
-        try {
-
-            SQLiteDatabase db = new DbHelper(mContext).getWritableDatabase();
-
-            // Update Transaction starts from here
-            db.beginTransaction();
-
-            String query = getReadQuery(key,FLOAT_TYPE);
-
-            Cursor c = db.rawQuery(query,null);
-
-            if(c.getCount()!=0&&c.moveToFirst()){
-
-                ContentValues values = new ContentValues();
-
-                values.put(DbContract.KeyValue.COLUMN_VALUE,value);
-
-                c.close();
-                db.update(DbContract.KeyValue.TABLE_NAME,values,"key = "+ "'"+ key +"'",null);
-            }else{
-
-                String insertQuery = getInsertQuery(key,value,FLOAT_TYPE);
-
-                SQLiteStatement stmtInsert = db.compileStatement(insertQuery);
-
-                long id = stmtInsert.executeInsert();
-
-                if(id!=-1)
-                    Log.d(TAG_SUCCESS,"Insert is successfull:putFloat()");
-                else{
-                    result = false;
-                    Log.d("FAILURE","Insert failed : putFloat()");
-                }
-
-            }
-
-
-            db.setTransactionSuccessful();
-            db.endTransaction();
-            db.close();
-
-        }catch (SQLException e){
-            result =false;
-           Log.e("SQL_INSERT","SQLError"+e);
-        }
-        finally {
-            w.unlock();
-        }
-
-        return result;
-    }
-
-    /**getString used to retrieve the value associated with the key
-    * @return value if exist else null
-    **/
-    @Nullable
-    public String getString(String key){
-
-        r.lock();
-         try{
-
-             SQLiteDatabase db = new DbHelper(mContext).getReadableDatabase();
-
-             String query = getReadQuery(key,STRING_TYPE);
-
-             Cursor c = db.rawQuery(query,null);
-
-             String ans;
-
-                if(c!=null&c.moveToFirst()){
-                    ans = c.getString(COLUMN_INDEX_VALUE);
-
-                    c.close();
-                    db.close();
-
-                    return ans;
-                }else{
-                    Log.d(TAG_EMPTY_CURSOR,"Cursor is null :- getString()");
-                }
-             db.close();
-         }
-         catch (Exception e){
-             Log.d("SQL QUERY","ERROR GENERATED FROM getString()",e);
-         }
-         finally {
-             r.unlock();
-         }
 
         return null;
     }
 
-
-    /**putString used to insert the value associated with key
-     * if it doesn't exist else it updates the existing value
-     * @return true if successful false otherwise
-    **/
-
-    public boolean putString(String key, String value){
-
-
-        boolean result = true;
-
-        w.lock();
-
-        try{
-            SQLiteDatabase db = new DbHelper(mContext).getWritableDatabase();
-
-            // Update Transaction starts from here
-            db.beginTransaction();
-
-            String query = getReadQuery(key,STRING_TYPE);
-            Cursor c = db.rawQuery(query,null);
-
-            if(c.getCount()!=0&&c.moveToFirst()){
-
-                ContentValues values = new ContentValues();
-
-                values.put(DbContract.KeyValue.COLUMN_VALUE,value);
-
-                c.close();
-                db.update(DbContract.KeyValue.TABLE_NAME,values,"key = "+ "'"+ key +"'",null);
-              }else{
-
-                String insertQuery = getInsertQuery(key,value,STRING_TYPE);
-                SQLiteStatement stmtInsert = db.compileStatement(insertQuery);
-
-               long id = stmtInsert.executeInsert();
-
-                if(id!=-1)
-                    Log.d(TAG_SUCCESS,"Insert is successfull:putString()");
-                else{
-                    result = false;
-                    Log.d("FAILURE","Insert failed : putString()");
-                }
-
-            }
-
-            db.setTransactionSuccessful();
-            db.endTransaction();
-            db.close();
-        }catch (SQLException e){
-            result = false;
-            Log.e("SQL_INSERT","SQLError"+e);
-        }
-        finally {
-            w.unlock();
-        }
-
-        return result;
-    }
 }

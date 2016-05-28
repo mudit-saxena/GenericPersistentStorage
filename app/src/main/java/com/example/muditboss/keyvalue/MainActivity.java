@@ -20,24 +20,24 @@ public class MainActivity extends AppCompatActivity {
         //First set up a Key Value pair
         //Uncomment put methods if going for a first run
 
-          csm.putString("KEY","MUDIT");
-          csm.putInt("INT_VALUE",100);
-          csm.putLong("LONG_VALUE",987654321021L);
-          csm.putFloat("FLOAT_VAL",0.325f);
+          csm.put("KEY","MUDIT");
+          csm.put("INT_VALUE",100);
+          csm.put("LONG_VALUE",987654321021L);
+          csm.put("FLOAT_VAL",0.325f);
 
 
         // Multilple threads created to check working of lock and safety of db
 
         ( new Thread(){
             public void run(){
-                csm.putInt("T1",1);
+                csm.put("T1",1);
             }
 
         }).start();
 
         ( new Thread(){
             public void run(){
-                csm.putLong("T2",25L);
+                csm.put("T2",25L);
             }
 
         }).start();
@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
         ( new Thread(){
             public void run(){
                 Log.d("t4 3","t4 3 one");
-                csm.putString("T4","3");
+                csm.put("T4","3");
             }
 
         }).start();
@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
         ( new Thread(){
             public void run(){
                 Log.d("T4 50","T4 50 one");
-                csm.putString("T4","50");
+                csm.put("T4","50");
             }
 
         }).start();
@@ -77,11 +77,11 @@ public class MainActivity extends AppCompatActivity {
         // Extract the keyValue pair and set to textView
         // For checking persistence comment out the putString after first run
 
-        int val = csm.getInt("INT_VALUE");
-        long lval = csm.getLong("LONG_VALUE");
-        float fval = csm.getFloat("FLOAT_VAL");
-
-        tv.setText(csm.getString("T3"));
+        int val = csm.get("INT_VALUE");
+        long lval = csm.get("LONG_VALUE");
+        float fval = csm.get("FLOAT_VAL");
+        String sval = csm.get("T3");
+        tv.setText(sval);
 
         intTv.setText(Integer.toString(val));
 
@@ -104,9 +104,9 @@ public class MainActivity extends AppCompatActivity {
         }
         public void run(){
             Log.d("T3 3","T3 90 one");
-            csm.putString("T3","90");
-            csm.getInt("INT_VALUE");
-            csm.getString("KEY");
+            csm.put("T3","90");
+            csm.get("INT_VALUE");
+            csm.get("KEY");
         }
     }
 }
