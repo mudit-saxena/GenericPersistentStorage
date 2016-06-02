@@ -60,41 +60,25 @@ public class CustomSharedPreference{
         return SQL_READ;
     }
 
-
-    private String getInsertQuery(String key, String value, String dataType){
+    private String getInsert(){
 
         String SQL_INSERT = "INSERT INTO "+ DbContract.KeyValue.TABLE_NAME+
-                " VALUES("
-                + "'" + key +"'" +","
-                +"'"+ value +"'" +","
-                +"'"+dataType +"'"
-                +")";
+                " VALUES(?,?,?)";
 
         return SQL_INSERT;
-
     }
+
 
     private String showType(Object o){
 
-        String type="";
-        String oType = o.getClass().getName();
-        if(oType.equals("java.lang.Integer"))
-         type = INT_TYPE;
-        else if(oType.equals("java.lang.Float"))
-          type = FLOAT_TYPE;
-        else if(oType.equals("java.lang.Long"))
-          type = LONG_TYPE;
-        else
-            type = STRING_TYPE;
-
-        return type;
+        return o.getClass().getName();
     }
 
 
-    public <T> boolean put(String key,T val){
+    public <T> boolean put(String key,T value){
         boolean result = true;
-        String value = String.valueOf(val);
-        String dataType = showType(val);
+
+        String dataType = showType(value);
         w.lock();
 
         try {
@@ -104,30 +88,41 @@ public class CustomSharedPreference{
             // Update Transaction starts from here
             db.beginTransaction();
 
+
             String query = getReadQuery(key);
             Cursor c = db.rawQuery(query,null);
+
+            byte[] objectTobyte = SerializeObject.getObjectToByte(value);
 
             if(c.getCount()!=0&&c.moveToFirst()){
 
                 ContentValues values = new ContentValues();
 
-                values.put(DbContract.KeyValue.COLUMN_VALUE,value);
+                values.put(DbContract.KeyValue.COLUMN_VALUE,objectTobyte);
 
                 c.close();
                 db.update(DbContract.KeyValue.TABLE_NAME,values,"key = "+ "'"+ key +"'",null);
             }else{
 
-                String insertQuery = getInsertQuery(key,value,dataType);
 
-                SQLiteStatement stmtInsert = db.compileStatement(insertQuery);
+                   String insertQuery = getInsert();
+                try {
+                    SQLiteStatement stmtInsert = db.compileStatement(insertQuery);
 
-                long id = stmtInsert.executeInsert();
+                    stmtInsert.bindString(1, key);
+                    stmtInsert.bindBlob(2, objectTobyte);
+                    stmtInsert.bindString(3,dataType);
+                    long id = stmtInsert.executeInsert();
 
-                if(id!=-1)
-                    Log.d(TAG_SUCCESS,"Insert is successfull:put()");
-                else{
-                    result = false;
-                    Log.d("FAILURE","Insert failed : put()");
+                    if (id != -1)
+                        Log.d(TAG_SUCCESS, "Insert is successfull:put()");
+                    else {
+                        result = false;
+                        Log.d("FAILURE", "Insert failed : put()");
+                    }
+                }catch (SQLException e){
+                    e.printStackTrace();
+                    Log.d("FAILURE", "SQL Statement compilation failed : put()");
                 }
 
             }
@@ -160,29 +155,27 @@ public class CustomSharedPreference{
             String ans="";
 
             if(c!=null&c.moveToFirst()) {
-                ans = c.getString(COLUMN_INDEX_VALUE);
+
+                byte[] val = c.getBlob(COLUMN_INDEX_VALUE);
+
+                T object = (T) SerializeObject.getByteToObject(val);
 
                 String type = c.getString(2);
                 c.close();
                 db.close();
 
-                if(type.equals(INT_TYPE))
-                    return (T) Integer.valueOf(ans);
-                else if(type.equals(FLOAT_TYPE))
-                    return (T) Float.valueOf(ans);
-                else if(type.equals(LONG_TYPE))
-                    return (T) Long.valueOf(ans);
-                else
-                    return (T) ans;
+
+                if(object!=null)
+                    return object;
             }
             else{
-                Log.d(TAG_EMPTY_CURSOR,"Cursr is null :- getInt()");
+                Log.d(TAG_EMPTY_CURSOR,"Cursr is null :- get()");
             }
             db.close();
 
         }
         catch (SQLException e){
-            Log.d("SQL Query","ERROR GENERATED FROM getInt()",e);
+            Log.d("SQL Query","ERROR GENERATED FROM get()",e);
         }
         finally {
             r.unlock();

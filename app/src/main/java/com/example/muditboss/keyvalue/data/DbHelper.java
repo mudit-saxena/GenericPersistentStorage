@@ -29,7 +29,7 @@ public class DbHelper extends SQLiteOpenHelper{
         sql += "CREATE TABLE " + DbContract.KeyValue.TABLE_NAME;
         sql += " ( ";
         sql += DbContract.KeyValue.COLUMN_KEY + " TEXT PRIMARY KEY, ";
-        sql += DbContract.KeyValue.COLUMN_VALUE + " TEXT, ";
+        sql += DbContract.KeyValue.COLUMN_VALUE + " BLOB, ";
         sql += DbContract.KeyValue.COLUMN_TYPE + " TEXT ";
         sql += " ) ";
         SQLiteStatement stmt = db.compileStatement(sql);
