@@ -1,7 +1,7 @@
 # README #
 
 Key Value Persistent Storage Layer.
-It supports basic data types int, float, long and String
+
 
 # Structure #
 
