@@ -1,6 +1,6 @@
 # README #
 
-Key Value Persistent Storage Layer.
+Key-Value Persistent Storage Layer. Based on pure SQLite queries, it doesn't require any ORM. 
 
 
 # Structure #
